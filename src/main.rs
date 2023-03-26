@@ -4,6 +4,7 @@ extern crate dotenv;
 
 use dotenv::dotenv;
 mod exchanges;
+mod models;
 
 // up next let's turn this into a response?
 // we need to do CEX arbitrage first.
@@ -30,11 +31,6 @@ fn main() {
         api_key: dotenv!("KRAKEN_API_KEY").to_string(),
         api_secret: dotenv!("KRAKEN_API_SECRET").to_string()
     };
-    use std::time::Instant;
-    loop {
-        let now = Instant::now();
-        let result = kraken.get_price().unwrap();
-        let el = now.elapsed();
-        println!("Result: {} Elapsed: {:?}", result, el);
-    }
+    let result = kraken.get_price(vec!["ETHUSDT"]).unwrap();
+    println!("Result: {:?}", result);
 }
