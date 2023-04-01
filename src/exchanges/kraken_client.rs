@@ -68,18 +68,23 @@ impl KrakenClient {
         // Fix for multiple assets
         Ok(price::Price {
             asset: asset::Asset::ETHUSDT,
-            price: depth_result.asks[0].price
+            price: depth_result.bids[0].price
         })
     }
 
     // support multiple assets? also need a better way to determine price
-    pub fn buy(&self) -> OrderResult {
-        let json = serde_json::json!({
+    // volume is in ETH whether selling or buying
+    pub fn buy(&self, price: Option<f64>) -> OrderResult {
+        let mut json = serde_json::json!({
             "pair": "ETHUSDT",
-            "type": "buy",
+            "type": "sell",
             "ordertype": "market",
             "volume": 0.01
         });
+        if price.is_some() {
+            let mut m = json.as_object_mut().unwrap();
+            m.insert(String::from("price"), serde_json::json!(price.unwrap()));
+        }
         match self.post("/0/private/AddOrder", json) {
             Ok(result) => {
                 println!("BUY RESULT {}", &result);
@@ -92,7 +97,7 @@ impl KrakenClient {
     }
 
     #[tokio::main]
-    async fn post(&self, endpoint: &str, form_fields: Value) -> Result<String, Error> {
+    async fn post(&self, endpoint: &str, mut form_fields: Value) -> Result<String, Error> {
         let url = format!("{}{}", API_URL, endpoint);
         let nonce = SystemTime::now().duration_since(UNIX_EPOCH).expect("Time went backwards").as_micros().to_string();
         let mut payload = form_fields.clone();
@@ -100,6 +105,7 @@ impl KrakenClient {
         m.insert(String::from("nonce"), serde_json::json!(nonce));
         let payload = serde_json::to_value(m).unwrap();
         let sig = self.generate_signature(&endpoint, &nonce, &*serde_json::to_string(&payload).unwrap()).await;
+        println!("payload {}", &payload);
         let response = CLIENT.post(&url)
             .header("API-Key", &self.api_key)
             .header("API-Sign", sig)

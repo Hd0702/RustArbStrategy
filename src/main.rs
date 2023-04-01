@@ -28,16 +28,16 @@ fn main() {
         api_secret: dotenv!("COINBASE_API_SECRET").to_string()
     };
     coinbase.private_get();
-    // let c_response = coinbase.get_price().unwrap();
-    // println!("Coinbase response: {:?}", c_response);
+    let c_response = coinbase.get_price().unwrap();
+    println!("Coinbase response: {:?}", c_response);
     let buy_response = coinbase.buy().unwrap();
     println!("Buy response: {:?}", buy_response);
     let kraken = exchanges::KrakenClient {
         api_key: dotenv!("KRAKEN_API_KEY").to_string(),
         api_secret: dotenv!("KRAKEN_API_SECRET").to_string()
     };
-    // let result = kraken.get_price(vec!["ETHUSDT"]).unwrap();
-    // println!("Result: {:?}", result);
-    let buy_kraken_response = kraken.buy();
-    println!("Buy response: {:?}", buy_kraken_response);
+    let result = kraken.get_price(vec!["ETHUSDT"]).unwrap();
+    println!("Result: {:?}", result);
+    // let buy_kraken_response = kraken.buy(Some(result.price));
+    // println!("Buy response: {:?}", buy_kraken_response);
 }

@@ -66,29 +66,17 @@ impl CoinbaseClient {
     pub fn buy(&self) -> Result<String, Box<dyn Error>> {
         let endpoint = "/api/v3/brokerage/orders";
         let method = "POST";
-        // let request = OrderRequest {
-        //     client_order_id:  Uuid::new_v4().to_string(),
-        //     product_id: "ETH-USDT".to_string(),
-        //     side: "BUY".to_string(),
-        //     order_config: OrderConfig {
-        //         market_market_ioc: MarketOrder {
-        //             // Find a better way to determine quote and base size
-        //             quote_size: Some("0.1".to_string()),
-        //             base_size: None
-        //         }
-        //     }
-        // };
-        let request = json!({
+        let request: Value = json!({
             "client_order_id": Uuid::new_v4().to_string(),
             "product_id": "ETH-USDT",
             "side": "BUY",
             "order_config": {
                 "market_market_ioc": {
-                    "quote_size": "0.1",
+                    "quote_size": "0.01"
                 }
             }
         });
-        self.private(method, endpoint, request.to_string())
+        self.private(method, endpoint, serde_json::to_string(&request).unwrap())
     }
 
     #[tokio::main]
@@ -98,7 +86,7 @@ impl CoinbaseClient {
         let signature = self.generate_signature(&method.to_string(), &endpoint.to_string(), &data, &since_the_epoch).await;
         println!("Signature: {} and url: {} and since_the_epoch: {} and body {}", &signature, &url, &since_the_epoch, &data);
         let result = CLIENT.let_owned(|client| {
-            if method == "post" { client.post(&url).body(data) } else { client.get(&url) }
+            if method == "POST" { client.post(&url).body(data) } else { client.get(&url) }
         }).header("Content-Type", "application/json")
             .header("CB-ACCESS-KEY", &self.api_key)
             .header("CB-ACCESS-SIGN", signature)
