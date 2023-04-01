@@ -5,6 +5,7 @@ extern crate dotenv;
 use dotenv::dotenv;
 mod exchanges;
 mod models;
+mod utils;
 
 // up next let's turn this into a response?
 // we need to do CEX arbitrage first.
@@ -26,11 +27,17 @@ fn main() {
         api_key: dotenv!("COINBASE_API_KEY").to_string(),
         api_secret: dotenv!("COINBASE_API_SECRET").to_string()
     };
-    coinbase.hello_world();
+    coinbase.private_get();
+    // let c_response = coinbase.get_price().unwrap();
+    // println!("Coinbase response: {:?}", c_response);
+    let buy_response = coinbase.buy().unwrap();
+    println!("Buy response: {:?}", buy_response);
     let kraken = exchanges::KrakenClient {
         api_key: dotenv!("KRAKEN_API_KEY").to_string(),
         api_secret: dotenv!("KRAKEN_API_SECRET").to_string()
     };
-    let result = kraken.get_price(vec!["ETHUSDT"]).unwrap();
-    println!("Result: {:?}", result);
+    // let result = kraken.get_price(vec!["ETHUSDT"]).unwrap();
+    // println!("Result: {:?}", result);
+    let buy_kraken_response = kraken.buy();
+    println!("Buy response: {:?}", buy_kraken_response);
 }

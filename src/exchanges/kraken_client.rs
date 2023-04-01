@@ -10,7 +10,7 @@ use std::str::FromStr;
 use base64::{Engine as Base64Engine, engine::{self, general_purpose}};
 use reqwest::header::HeaderName;
 use once_cell::sync::Lazy;
-use serde_json::{Value, Map };
+use serde_json::{ Value, Map };
 use serde::{Serialize, Deserialize, Deserializer};
 use crate::models::{asset, price};
 
@@ -36,6 +36,18 @@ struct Order {
     timestamp: f64
 }
 
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct OrderResult {
+    txid: Vec<String>,
+    descr: OrderDescription
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct OrderDescription {
+    order: String,
+    close: Option<String>
+}
+
 fn f64_from_str<'de, D>(deserializer: D) -> Result<f64, D::Error>
     where D: Deserializer<'de>
 {
@@ -45,6 +57,8 @@ fn f64_from_str<'de, D>(deserializer: D) -> Result<f64, D::Error>
 
 
 static CLIENT : Lazy<Client> = Lazy::new(|| ClientBuilder::new().timeout(Duration::from_secs(10)).build().expect("Failed to build client"));
+
+// assume conversion fee is 0.16% https://www.kraken.com/features/fee-schedule#spot-crypto
 impl KrakenClient {
     pub(crate) fn get_price(&self, pairs: Vec<&str>) -> Result<price::Price, Error> {
         let headers: HashMap<String, String> = HashMap::from([("pair".to_string(), pairs.join(","))]);
@@ -56,6 +70,47 @@ impl KrakenClient {
             asset: asset::Asset::ETHUSDT,
             price: depth_result.asks[0].price
         })
+    }
+
+    // support multiple assets? also need a better way to determine price
+    pub fn buy(&self) -> OrderResult {
+        let json = serde_json::json!({
+            "pair": "ETHUSDT",
+            "type": "buy",
+            "ordertype": "market",
+            "volume": 0.01
+        });
+        match self.post("/0/private/AddOrder", json) {
+            Ok(result) => {
+                println!("BUY RESULT {}", &result);
+                let parsed: Value = serde_json::from_str(&result).unwrap();
+
+                serde_json::from_value::<OrderResult>(parsed["result"].clone()).unwrap()
+            },
+            Err(e) => panic!("Error: {}", e)
+        }
+    }
+
+    #[tokio::main]
+    async fn post(&self, endpoint: &str, form_fields: Value) -> Result<String, Error> {
+        let url = format!("{}{}", API_URL, endpoint);
+        let nonce = SystemTime::now().duration_since(UNIX_EPOCH).expect("Time went backwards").as_micros().to_string();
+        let mut payload = form_fields.clone();
+        let m = payload.as_object_mut().unwrap();
+        m.insert(String::from("nonce"), serde_json::json!(nonce));
+        let payload = serde_json::to_value(m).unwrap();
+        let sig = self.generate_signature(&endpoint, &nonce, &*serde_json::to_string(&payload).unwrap()).await;
+        let response = CLIENT.post(&url)
+            .header("API-Key", &self.api_key)
+            .header("API-Sign", sig)
+            .header("Content-Type", "application/json")
+            .body(serde_json::to_string(&payload).unwrap())
+            .send()
+            .await?
+            .text()
+            .await?;
+        println!("RESPONSE {}", &response);
+        Ok(response)
     }
 
     #[tokio::main]
