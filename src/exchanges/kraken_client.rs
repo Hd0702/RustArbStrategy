@@ -13,6 +13,7 @@ use once_cell::sync::Lazy;
 use serde_json::{ Value, Map };
 use serde::{Serialize, Deserialize, Deserializer};
 use crate::models::{asset, price};
+use crate::utils::traits::LetTrait;
 
 const API_URL: &'static str = "https://api.kraken.com";
 
@@ -85,7 +86,7 @@ impl KrakenClient {
             let mut m = json.as_object_mut().unwrap();
             m.insert(String::from("price"), serde_json::json!(price.unwrap()));
         }
-        match self.post("/0/private/AddOrder", json) {
+        match self.private("/0/private/AddOrder", json, "POST") {
             Ok(result) => {
                 println!("BUY RESULT {}", &result);
                 let parsed: Value = serde_json::from_str(&result).unwrap();
@@ -96,8 +97,23 @@ impl KrakenClient {
         }
     }
 
+    // fee is in percent of 1% so 0.16% is 0.0016
+    pub fn get_fee(&self) -> f64 {
+        let mut json = serde_json::json!({
+            "pair": "ETHUSDT"
+        });
+        match self.private("/0/private/TradeVolume", json, "POST") {
+            Ok(result) => {
+                println!("FEE RESULT {}", &result);
+                let parsed: Value = serde_json::from_str(&result).unwrap();
+                parsed["result"]["fees"]["ETHUSDT"]["fee"].as_str().expect("Failed to parse").parse::<f64>().unwrap()
+            },
+            Err(e) => panic!("Error: {}", e)
+        }
+    }
+
     #[tokio::main]
-    async fn post(&self, endpoint: &str, mut form_fields: Value) -> Result<String, Error> {
+    async fn private(&self, endpoint: &str, mut form_fields: Value, method: &str) -> Result<String, Error> {
         let url = format!("{}{}", API_URL, endpoint);
         let nonce = SystemTime::now().duration_since(UNIX_EPOCH).expect("Time went backwards").as_micros().to_string();
         let mut payload = form_fields.clone();
@@ -106,8 +122,9 @@ impl KrakenClient {
         let payload = serde_json::to_value(m).unwrap();
         let sig = self.generate_signature(&endpoint, &nonce, &*serde_json::to_string(&payload).unwrap()).await;
         println!("payload {}", &payload);
-        let response = CLIENT.post(&url)
-            .header("API-Key", &self.api_key)
+        let response = CLIENT.let_owned(|client| {
+            if method.eq("GET") { client.get(&url) } else { client.post(&url) }
+        }).header("API-Key", &self.api_key)
             .header("API-Sign", sig)
             .header("Content-Type", "application/json")
             .body(serde_json::to_string(&payload).unwrap())
@@ -115,7 +132,7 @@ impl KrakenClient {
             .await?
             .text()
             .await?;
-        println!("RESPONSE {}", &response);
+        // add better error handling
         Ok(response)
     }
 

@@ -2,42 +2,32 @@
 extern crate dotenv_codegen;
 extern crate dotenv;
 
+use std::sync::Arc;
 use dotenv::dotenv;
+use ethers::contract::abigen;
+use ethers::prelude::{Http, Middleware, Provider};
+use ethers::types::Address;
+use crate::coins::Coin;
+use crate::exchanges::{Curve, UniswapV3Client, Sushi, QuickswapV2};
+use crate::flash_loan::Loan;
+
 mod exchanges;
 mod models;
 mod utils;
+mod flash_loan;
+mod coins;
 
-// up next let's turn this into a response?
-// we need to do CEX arbitrage first.
-// WE're just doing ETH for now.
-// we need to get the price of ETH on both exchanges
-// buy on one and sell on another
-// this means we need to be able to buy and sell on both exchanges
-// Then we can move onto DEX
-
-// Next steps
-// 1. Kraken client
-// 2. Turn get price of eth API into a shared response model
-// 3. Turn buy API into a shared response model
-// 4. set up arb loop that looks for arb opportunities and the price if we were to buy with fees
-// 5. Expand to dex arbitrage
-fn main() {
+// ideas
+// we need to associate by pools, not by tokens
+// each pool has a map of different tokens
+// something like calc_token_amount tells us the gas price
+// well need to build an adjacency list of tokens and the tokens they can go to
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
     dotenv().ok();
-    let coinbase = exchanges::CoinbaseClient {
-        api_key: dotenv!("COINBASE_API_KEY").to_string(),
-        api_secret: dotenv!("COINBASE_API_SECRET").to_string()
-    };
-    coinbase.private_get();
-    let c_response = coinbase.get_price().unwrap();
-    println!("Coinbase response: {:?}", c_response);
-    let buy_response = coinbase.buy().unwrap();
-    println!("Buy response: {:?}", buy_response);
-    let kraken = exchanges::KrakenClient {
-        api_key: dotenv!("KRAKEN_API_KEY").to_string(),
-        api_secret: dotenv!("KRAKEN_API_SECRET").to_string()
-    };
-    let result = kraken.get_price(vec!["ETHUSDT"]).unwrap();
-    println!("Result: {:?}", result);
-    // let buy_kraken_response = kraken.buy(Some(result.price));
-    // println!("Buy response: {:?}", buy_kraken_response);
+    Sushi::new().get_price(Coin::USDT, Coin::USDC, 100000).await.unwrap();
+    QuickswapV2::new().get_price(Coin::USDT, Coin::USDC, 100000).await.unwrap();
+    Curve::new("0x92215849c439e1f8612b6646060b4e3e5ef822cc".to_string())
+        .get_price_tricrypto3(Coin::USDT, Coin::USDC, 100000).await.unwrap();
+    Ok(())
 }

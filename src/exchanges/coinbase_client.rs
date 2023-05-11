@@ -59,8 +59,21 @@ impl CoinbaseClient {
         }
     }
 
-    pub fn private_get(&self) {
-        println!("private get {}", self.private("GET", "/api/v3/brokerage/products/BTC-USD/candles?start=1606039200&end=1607115600&granularity=ONE_HOUR", "".to_string()).unwrap());
+    pub fn get_fee(&self, isMaker: bool) -> Result<f64, Box<dyn Error>> {
+        let endpoint = "/api/v3/brokerage/transaction_summary";
+        match self.private("GET", endpoint, "".to_string()) {
+            Ok(response) => {
+                println!("fee response {}", response);
+                let serde_response: Value = serde_json::from_str(&response).unwrap();
+                // If we're buying we pay the maker fee, if we're selling we pay the taker fee
+                serde_response["fee_tier"].let_owned(|fee_tier| if isMaker {
+                    fee_tier["maker_fee_rate"].as_str().expect("Failed to parse").parse::<f64>().unwrap()
+                } else {
+                    fee_tier["taker_fee_rate"].as_str().expect("Failed to parse").parse::<f64>().unwrap()
+                }).let_ref(|fee| Ok(fee))
+            },
+            Err(e) => Err(e)
+        }
     }
 
     pub fn buy(&self) -> Result<String, Box<dyn Error>> {
@@ -84,7 +97,6 @@ impl CoinbaseClient {
         let url = format!("{}{}", API_URL, endpoint);
         let since_the_epoch = SystemTime::now().duration_since(UNIX_EPOCH).expect("Time went backwards").as_secs().to_string();
         let signature = self.generate_signature(&method.to_string(), &endpoint.to_string(), &data, &since_the_epoch).await;
-        println!("Signature: {} and url: {} and since_the_epoch: {} and body {}", &signature, &url, &since_the_epoch, &data);
         let result = CLIENT.let_owned(|client| {
             if method == "POST" { client.post(&url).body(data) } else { client.get(&url) }
         }).header("Content-Type", "application/json")
@@ -101,7 +113,6 @@ impl CoinbaseClient {
     async fn generate_signature(&self, method: &String, request_path: &String, body: &String, timestamp: &String) -> String {
         let path = request_path.split('?').collect::<Vec<&str>>()[0];
         let message = format!("{}{}{}{}", timestamp, method, path, body);
-        println!("THINGS {}", message);
         let mut mac = HmacSha256::new_from_slice(&self.api_secret.as_bytes()).unwrap();
         mac.update(message.as_bytes());
 
