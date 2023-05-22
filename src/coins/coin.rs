@@ -1,4 +1,7 @@
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+use strum::IntoEnumIterator;
+use strum_macros::EnumIter;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, EnumIter)]
 pub enum Coin {
     USDT,
     USDC,

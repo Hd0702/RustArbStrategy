@@ -1,8 +1,9 @@
 pub mod uniswap_v3_client;
-mod curve;
-mod sushi_swap;
-mod quickswap_v2;
+pub(crate) mod curve;
+pub(crate) mod sushi_swap;
+pub(crate) mod quickswap_v2;
 mod uniswap_v2_base;
+mod base_dex;
 
 use std::sync::Arc;
 use ethers::prelude::{abigen, Http, Provider};
@@ -11,6 +12,7 @@ pub use uniswap_v3_client::UniswapV3Client;
 pub use curve::Curve;
 pub use sushi_swap::Sushi;
 pub use quickswap_v2::QuickswapV2;
+pub use base_dex::BaseDex;
 use uniswap_v2_base::UniswapV2Base;
 
 abigen!(CURVE_TRICRYPTO3,"./src/exchanges/dex/contracts/curve_quoter.json");

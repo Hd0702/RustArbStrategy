@@ -7,7 +7,8 @@ use ethers::solc::resolver::print;
 use ethers::types::{Address, U256};
 use once_cell::sync::Lazy;
 use crate::coins::Coin;
-use memoize::memoize;
+use async_trait::async_trait;
+use crate::exchanges::BaseDex;
 use crate::exchanges::dex::{CURVE_AAVE, CURVE_TRICRYPTO3, PROVIDER};
 
 pub struct Curve {
@@ -22,22 +23,22 @@ impl Curve {
         }
     }
     const TOKEN_MAP: Lazy<HashMap<&str, HashMap<Coin, i8>>> = Lazy::new(|| HashMap::from([
-                ("0x92215849c439e1f8612b6646060b4e3e5ef822cc", HashMap::from([
-                    (Coin::DAI, 0),
-                    (Coin::USDC, 0),
-                    (Coin::USDT, 0),
-                    (Coin::WETH, 2),
-                    (Coin::WBTC, 1)
-                ]))
-            ])
+        ("0x92215849c439e1f8612b6646060b4e3e5ef822cc", HashMap::from([
+            (Coin::DAI, 0),
+            (Coin::USDC, 0),
+            (Coin::USDT, 0),
+            (Coin::WETH, 2),
+            (Coin::WBTC, 1)
+        ]))
+    ])
     );
 
     const WRAPPED_POOLS: Lazy<HashMap<Coin, (i8, &str)>> = Lazy::new(||
         HashMap::from([
             // double check these are correct
             (Coin::DAI, (0, "0x445fe580ef8d70ff569ab36e80c647af338db351")),
-            (Coin::USDC, (1,"0x445fe580ef8d70ff569ab36e80c647af338db351")),
-            (Coin::USDT, (2,"0x445fe580ef8d70ff569ab36e80c647af338db351"))
+            (Coin::USDC, (1, "0x445fe580ef8d70ff569ab36e80c647af338db351")),
+            (Coin::USDT, (2, "0x445fe580ef8d70ff569ab36e80c647af338db351"))
         ])
     );
 
@@ -48,12 +49,12 @@ impl Curve {
 
     const CURVE_AAVE_QUOTER: Lazy<CURVE_AAVE<Provider<Http>>> = Lazy::new(|| {
         let pool_address: Address = "0x445fe580ef8d70ff569ab36e80c647af338db351".parse().unwrap();
-       CURVE_AAVE::new(pool_address, PROVIDER.clone())
+        CURVE_AAVE::new(pool_address, PROVIDER.clone())
     });
 
-    // We should go one token at a time to keep things simple
-    // assume we just have one pool for now
-    pub async fn get_price_tricrypto3(&self, token_in: Coin, token_out: Coin, amount: u128) -> Result<u128, Box<dyn std::error::Error>> {
+
+
+    async fn get_price_tricrypto3(&self, token_in: Coin, token_out: Coin, amount: u128) -> Result<u128, Box<dyn std::error::Error>> {
         if token_in.isStable() && token_out.isStable() {
             return self.get_price_aave(token_in, token_out, amount).await;
         }
@@ -71,7 +72,7 @@ impl Curve {
         Ok(dy.as_u128())
     }
 
-    pub async fn get_price_aave(&self, token_in: Coin, token_out: Coin, amount: u128) -> Result<u128, Box<dyn std::error::Error>> {
+    async fn get_price_aave(&self, token_in: Coin, token_out: Coin, amount: u128) -> Result<u128, Box<dyn std::error::Error>> {
         let amount = U256::from(amount);
         let fee = Self::CURVE_AAVE_QUOTER.get_virtual_price().call().await?;
         let token_in_id = Self::WRAPPED_POOLS.get(&token_in).ok_or("aave token in address not found")?.0 as i128;
@@ -87,3 +88,18 @@ impl Curve {
         Ok(dy.as_u128())
     }
 }
+
+#[async_trait]
+impl BaseDex for Curve {
+    // We should go one token at a time to keep things simple
+    // assume we just have one pool for now
+    async fn get_price(&self, token_in: Coin, token_out: Coin, amount: u128) -> Result<u128, Box<dyn std::error::Error>> {
+        self.get_price_tricrypto3(token_in, token_out, amount).await
+    }
+
+    fn get_name(&self) -> String {
+        "Curve".to_string()
+    }
+}
+
+pub static CURVE_INSTANCE: Lazy<Curve> = Lazy::new(|| Curve::new("0x92215849c439e1f8612b6646060b4e3e5ef822cc".to_string()));

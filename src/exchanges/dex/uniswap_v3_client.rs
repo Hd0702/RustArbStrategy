@@ -1,10 +1,13 @@
 use std::collections::HashMap;
+use std::error::Error;
 use std::sync::Arc;
 use ethers::prelude::{abigen, Provider};
 use ethers::providers::Http;
 use ethers::types::{Address, U256};
 use once_cell::sync::Lazy;
+use async_trait::async_trait;
 use crate::coins::Coin;
+use crate::exchanges::BaseDex;
 use crate::exchanges::dex::{PROVIDER, UNISWAP_V3_ROUTER};
 
 pub struct UniswapV3Client{
@@ -21,9 +24,14 @@ impl UniswapV3Client {
         let pool_address: Address = "0xb27308f9F90D607463bb33eA1BeBb41C27CE5AB6".parse().unwrap();
         UNISWAP_V3_ROUTER::new(pool_address, PROVIDER.clone())
     });
+}
 
-    // we also need to figure out the fee as well. This is different for every pool. Will need to do an approach like curve
-    pub async fn get_price(&self, token_in: Coin, token_out: Coin, amount: u128) -> Result<u128, Box<dyn std::error::Error>> {
-        panic!("not implemented")
+#[async_trait]
+impl BaseDex for UniswapV3Client {
+    async fn get_price(&self, token_in: Coin, token_out: Coin, amount: u128) -> Result<u128, Box<dyn Error>> {
+        todo!("implement uniswap v3 client")
+    }
+    fn get_name(&self) -> String {
+        "UniswapV3Client".to_string()
     }
 }

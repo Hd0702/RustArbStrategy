@@ -1,21 +1,16 @@
-#[macro_use]
 extern crate dotenv_codegen;
 extern crate dotenv;
 
-use std::sync::Arc;
 use dotenv::dotenv;
-use ethers::contract::abigen;
-use ethers::prelude::{Http, Middleware, Provider};
-use ethers::types::Address;
 use crate::coins::Coin;
-use crate::exchanges::{Curve, UniswapV3Client, Sushi, QuickswapV2};
-use crate::flash_loan::Loan;
+use crate::exchanges::{Curve, Sushi, QuickswapV2, BaseDex};
+use crate::graph::GraphBuilder;
 
 mod exchanges;
 mod models;
 mod utils;
-mod flash_loan;
 mod coins;
+mod graph;
 
 // ideas
 // we need to associate by pools, not by tokens
@@ -25,9 +20,10 @@ mod coins;
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     dotenv().ok();
+    let graph = GraphBuilder::new().build_vertices();
     Sushi::new().get_price(Coin::USDT, Coin::USDC, 100000).await.unwrap();
     QuickswapV2::new().get_price(Coin::USDT, Coin::USDC, 100000).await.unwrap();
     Curve::new("0x92215849c439e1f8612b6646060b4e3e5ef822cc".to_string())
-        .get_price_tricrypto3(Coin::USDT, Coin::USDC, 100000).await.unwrap();
+        .get_price(Coin::USDT, Coin::USDC, 100000).await.unwrap();
     Ok(())
 }

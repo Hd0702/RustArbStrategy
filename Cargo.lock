@@ -16,6 +16,7 @@ dependencies = [
 name = "RustArbitrageProject"
 version = "0.1.0"
 dependencies = [
+ "async-trait",
  "base64 0.21.0",
  "dotenv",
  "dotenv_codegen",
@@ -25,10 +26,13 @@ dependencies = [
  "hmac",
  "memoize",
  "once_cell",
+ "priority-queue",
  "reqwest",
  "serde",
  "serde_json",
  "sha2 0.10.6",
+ "strum",
+ "strum_macros",
  "tokio",
  "uuid 1.3.0",
 ]
@@ -2376,6 +2380,16 @@ dependencies = [
  "impl-serde",
  "scale-info",
  "uint",
+]
+
+[[package]]
+name = "priority-queue"
+version = "1.3.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5ca9c6be70d989d21a136eb86c2d83e4b328447fac4a88dace2143c179c86267"
+dependencies = [
+ "autocfg",
+ "indexmap",
 ]
 
 [[package]]
