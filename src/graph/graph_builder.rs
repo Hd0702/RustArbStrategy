@@ -1,12 +1,12 @@
 use std::collections::HashMap;
-use std::rc::Rc;
+
 use std::sync::Mutex;
-use std::slice::Iter;
+
 use strum_macros::EnumIter;
 use priority_queue::double_priority_queue::DoublePriorityQueue;
 use crate::coins::Coin;
 use crate::graph::path::{Path, PriceCall};
-use crate::exchanges::{Curve, UniswapV3Client, Sushi, QuickswapV2, BaseDex};
+use crate::exchanges::{BaseDex};
 use strum::IntoEnumIterator;
 use crate::exchanges::dex::curve::CURVE_INSTANCE;
 use crate::exchanges::dex::quickswap_v2::QUICKSWAP_V2_INSTANCE;

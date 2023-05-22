@@ -1,4 +1,4 @@
-use reqwest::{Client, ClientBuilder, Error};
+use reqwest::{Client, ClientBuilder};
 use std::time::Duration;
 use once_cell::sync::Lazy;
 use crate::utils::traits::{ApplyTrait, LetTrait};

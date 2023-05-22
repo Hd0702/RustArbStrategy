@@ -1,9 +1,9 @@
 use std::collections::HashMap;
 use std::string::ToString;
-use std::sync::Arc;
-use ethers::prelude::{abigen, Provider};
+
+use ethers::prelude::{Provider};
 use ethers::providers::Http;
-use ethers::solc::resolver::print;
+
 use ethers::types::{Address, U256};
 use once_cell::sync::Lazy;
 use crate::coins::Coin;

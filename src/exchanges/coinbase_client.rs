@@ -1,15 +1,15 @@
-use std::collections::HashMap;
+
 use std::error::Error;
 use hex;
 use hmac::{Hmac, Mac};
-use reqwest::ClientBuilder;
+
 use sha2::{Sha256, Digest};
-use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use std::time::{SystemTime, UNIX_EPOCH};
 use std::str;
 use crate::models::{asset, price};
 use crate::utils::{ http::CLIENT, traits::LetTrait };
-use serde_json::{Value, Map, json};
-use serde::{Serialize, Deserialize, Deserializer};
+use serde_json::{Value, json};
+use serde::{Serialize};
 use uuid::Uuid;
 
 type HmacSha256 = Hmac<Sha256>;

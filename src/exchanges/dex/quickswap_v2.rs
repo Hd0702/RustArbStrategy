@@ -1,12 +1,12 @@
 use std::error::Error;
-use std::str::FromStr;
-use ethers::prelude::{Address, U256};
-use ethers::providers::{Http, Provider};
+
+use ethers::prelude::{Address};
+
 use once_cell::sync::Lazy;
 use async_trait::async_trait;
 use crate::coins::Coin;
 use crate::exchanges::BaseDex;
-use crate::exchanges::dex::{PROVIDER, UNISWAP_V2_ROUTER, UniswapV2Base};
+use crate::exchanges::dex::{UniswapV2Base};
 
 pub struct QuickswapV2 {
     uniswap_v2_base: UniswapV2Base

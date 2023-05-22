@@ -1,9 +1,9 @@
-use std::collections::HashMap;
+
 use std::error::Error;
-use std::sync::Arc;
-use ethers::prelude::{abigen, Provider};
+
+use ethers::prelude::{Provider};
 use ethers::providers::Http;
-use ethers::types::{Address, U256};
+use ethers::types::{Address};
 use once_cell::sync::Lazy;
 use async_trait::async_trait;
 use crate::coins::Coin;
@@ -28,7 +28,7 @@ impl UniswapV3Client {
 
 #[async_trait]
 impl BaseDex for UniswapV3Client {
-    async fn get_price(&self, token_in: Coin, token_out: Coin, amount: u128) -> Result<u128, Box<dyn Error>> {
+    async fn get_price(&self, _token_in: Coin, _token_out: Coin, _amount: u128) -> Result<u128, Box<dyn Error>> {
         todo!("implement uniswap v3 client")
     }
     fn get_name(&self) -> String {

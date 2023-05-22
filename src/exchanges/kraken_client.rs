@@ -3,14 +3,14 @@ use hmac::{Hmac, Mac};
 use sha2::{Sha256, Sha512, Digest};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use std::str;
-use reqwest::{Client, Method, header::HeaderMap, header::HeaderValue, Error, ClientBuilder};
+use reqwest::{Client, Error, ClientBuilder};
 use std::collections::HashMap;
-use std::fmt::format;
-use std::str::FromStr;
-use base64::{Engine as Base64Engine, engine::{self, general_purpose}};
-use reqwest::header::HeaderName;
+
+
+use base64::{Engine as Base64Engine, engine::{self}};
+
 use once_cell::sync::Lazy;
-use serde_json::{ Value, Map };
+use serde_json::{ Value };
 use serde::{Serialize, Deserialize, Deserializer};
 use crate::models::{asset, price};
 use crate::utils::traits::LetTrait;
@@ -83,7 +83,7 @@ impl KrakenClient {
             "volume": 0.01
         });
         if price.is_some() {
-            let mut m = json.as_object_mut().unwrap();
+            let m = json.as_object_mut().unwrap();
             m.insert(String::from("price"), serde_json::json!(price.unwrap()));
         }
         match self.private("/0/private/AddOrder", json, "POST") {
@@ -99,7 +99,7 @@ impl KrakenClient {
 
     // fee is in percent of 1% so 0.16% is 0.0016
     pub fn get_fee(&self) -> f64 {
-        let mut json = serde_json::json!({
+        let json = serde_json::json!({
             "pair": "ETHUSDT"
         });
         match self.private("/0/private/TradeVolume", json, "POST") {
@@ -113,7 +113,7 @@ impl KrakenClient {
     }
 
     #[tokio::main]
-    async fn private(&self, endpoint: &str, mut form_fields: Value, method: &str) -> Result<String, Error> {
+    async fn private(&self, endpoint: &str, form_fields: Value, method: &str) -> Result<String, Error> {
         let url = format!("{}{}", API_URL, endpoint);
         let nonce = SystemTime::now().duration_since(UNIX_EPOCH).expect("Time went backwards").as_micros().to_string();
         let mut payload = form_fields.clone();
@@ -153,7 +153,7 @@ impl KrakenClient {
         let url = format!("{}{}", API_URL, endpoint);
         let nonce = SystemTime::now().duration_since(UNIX_EPOCH).expect("Time went backwards").as_micros().to_string();
         let post_data = format!("nonce={}", nonce);
-        let sig = self.generate_signature(&endpoint, &nonce, &post_data).await;
+        let _sig = self.generate_signature(&endpoint, &nonce, &post_data).await;
         let response = CLIENT.post(&url)
             .header("API-Key", &self.api_key)
             .header("API-Sign", self.generate_signature(&endpoint, &nonce, &post_data).await)
