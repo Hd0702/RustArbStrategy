@@ -61,14 +61,14 @@ impl Curve {
         let token_in_address = Self::TOKEN_MAP.get(&*self.pool_address).ok_or("token in address not found")?.get(&token_in).ok_or("coin not found in map")?.clone();
         let token_out_address = Self::TOKEN_MAP.get(&*self.pool_address).ok_or("token out address not found")?.get(&token_out).ok_or("coin not found in map")?.clone();
         let amount = U256::from(amount);
-        let fee = Self::CURVE_TRICRYPTO3_QUOTER.get_virtual_price().call().await?;
+        let fee: U256 = Self::CURVE_TRICRYPTO3_QUOTER.get_virtual_price().call().await?;
 
         let mut dy =  Self::CURVE_TRICRYPTO3_QUOTER.get_dy(U256::from(token_in_address), U256::from(token_out_address.clone()), U256::from(amount)).call().await?;
         // stables are LP tokens from this pool https://curve.fi/#/polygon/pools/aave/deposit wrapped in aave. Can be unrwapped by passing in _use_underlying in the contract
         if token_out_address == 0 {
             dy = Self::CURVE_AAVE_QUOTER.calc_withdraw_one_coin(dy, Self::WRAPPED_POOLS.get(&token_out).unwrap().0 as i128).call().await?;
         }
-        println!(" dy is {dy:?} and fee is {fee:?}");
+        println!(" dy is {dy:?} and fee is {fee:?} coin1 {token_in:?} coin2 {token_out:?}");
         Ok(dy.as_u128())
     }
 
@@ -77,8 +77,8 @@ impl Curve {
         let fee = Self::CURVE_AAVE_QUOTER.get_virtual_price().call().await?;
         let token_in_id = Self::WRAPPED_POOLS.get(&token_in).ok_or("aave token in address not found")?.0 as i128;
         let token_out_id = Self::WRAPPED_POOLS.get(&token_out).ok_or("aave token out address not found")?.0 as i128;
-        let dy = Self::CURVE_AAVE_QUOTER.get_dy_underlying(token_in_id, token_out_id, amount).call().await?;
-        println!("aave dy is {dy:?} and fee is {fee:?}");
+        let dy: U256 = Self::CURVE_AAVE_QUOTER.get_dy_underlying(token_in_id, token_out_id, amount).call().await?;
+        println!("aave dy is {dy:?} and fee is {fee:?} coin1 {token_in:?} coin2 {token_out:?}");
         // now let's calc with another version
         // let mut amounts = [U256::from(0); 3];
         // amounts[token_in_id as usize] = amount;

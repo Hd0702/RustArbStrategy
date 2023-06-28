@@ -23,7 +23,7 @@ impl UniswapV2Base {
         let address_in: Address = token_in.address().parse()?;
         let address_out: Address = token_out.address().parse()?;
         let price = self.router.get_amounts_out(U256::from(amount), vec![address_in, address_out]).await?;
-        println!("uniswap base price: {:?}", price);
+        println!("uniswap base price: {:?} coin {:?}, coin2 {:?}", price, token_in, token_out);
         Ok(price[1].as_u128())
     }
 }

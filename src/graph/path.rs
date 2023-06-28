@@ -20,7 +20,7 @@ impl Path {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Copy)]
 pub struct PriceCall {
     pub input_coin: Coin,
     pub output_coin: Coin,

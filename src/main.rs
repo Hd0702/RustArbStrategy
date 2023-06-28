@@ -20,7 +20,7 @@ mod graph;
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     dotenv().ok();
-    let _graph = GraphBuilder::new().build_vertices();
+    let _graph = GraphBuilder::new().await;
     Sushi::new().get_price(Coin::USDT, Coin::USDC, 100000).await.unwrap();
     QuickswapV2::new().get_price(Coin::USDT, Coin::USDC, 100000).await.unwrap();
     Curve::new("0x92215849c439e1f8612b6646060b4e3e5ef822cc".to_string())
